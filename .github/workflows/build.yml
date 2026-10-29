@@ -1,0 +1,90 @@
+name: Build Refresh
+
+# Runs automatically on every push to this repo, on GitHub's own cloud
+# machines - nothing is built on your PC. Finished .exe and .apk files
+# appear as downloadable "Artifacts" on the finished run (Actions tab
+# -> click the run -> scroll to the bottom).
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build-windows-host:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Windows host + pair CLI
+        run: cargo build --release -p refresh-windows-host -p refresh-core --bin pair --bin refresh-windows-host
+
+      - name: Collect output
+        run: |
+          mkdir dist
+          copy target\release\refresh-windows-host.exe dist\
+          copy target\release\pair.exe dist\
+        shell: cmd
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: refresh-windows-host
+          path: dist
+
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK + NDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK
+        run: sdkmanager --install "ndk;26.3.11579264"
+
+      - name: Cross-compile refresh-mobile-ffi for Android
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/26.3.11579264
+        run: |
+          mkdir -p android-client/app/src/main/jniLibs
+          cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 -o android-client/app/src/main/jniLibs build --release -p refresh-mobile-ffi
+
+      - name: Generate Kotlin bindings
+        run: |
+          cargo run --release -p refresh-mobile-ffi --bin uniffi-bindgen -- \
+            generate mobile-ffi/src/refresh.udl --language kotlin \
+            --out-dir android-client/app/src/main/java
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Build debug APK
+        working-directory: android-client
+        run: gradle assembleDebug
+
+      - name: Collect output
+        run: |
+          mkdir -p dist
+          cp android-client/app/build/outputs/apk/debug/*.apk dist/refresh.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: refresh-android
+          path: dist
