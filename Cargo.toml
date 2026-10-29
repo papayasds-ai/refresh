@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+members = [
+    "core",
+    "windows-host",
+    "mobile-ffi",
+]
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Needed to reach the paired PC over the network (including over
+         a Tailscale tunnel, which the OS treats as a normal network
+         interface). No other permissions are requested: this app does
+         not touch contacts, location, SMS, or anything else unrelated
+         to remote screen control. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:allowBackup="false"
+        android:label="Refresh"
+        android:theme="@style/Theme.Refresh"
+        android:icon="@android:drawable/ic_menu_view">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Refresh">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

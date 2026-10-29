@@ -1,0 +1,25 @@
+[package]
+name = "refresh-mobile-ffi"
+version = "0.1.0"
+edition = "2021"
+description = "UniFFI bridge exposing refresh-core to the Android (Kotlin) client, so the security-critical crypto/transport code has exactly one implementation shared by every platform"
+
+[lib]
+crate-type = ["cdylib", "staticlib", "lib"]
+name = "refresh_mobile_ffi"
+
+[dependencies]
+refresh-core = { path = "../core" }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+thiserror = "1"
+quinn = "0.11"
+uniffi = { version = "0.28", features = ["cli"] }
+once_cell = "1"
+
+[build-dependencies]
+uniffi = { version = "0.28", features = ["build"] }
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"

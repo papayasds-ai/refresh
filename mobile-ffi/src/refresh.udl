@@ -1,0 +1,37 @@
+namespace refresh_mobile_ffi {};
+
+[Error]
+enum FfiError {
+  "Failed",
+};
+
+interface RefreshClient {
+  [Throws=FfiError]
+  constructor(string data_dir);
+
+  string fingerprint();
+
+  string pairing_code();
+
+  [Throws=FfiError]
+  void trust_device(string code, string label);
+
+  sequence<string> list_trusted();
+
+  [Throws=FfiError]
+  RefreshSession connect(string host, u16 port);
+};
+
+interface RefreshSession {
+  void send_mouse_move(i32 x, i32 y);
+
+  void send_touch(f32 x, f32 y, string phase);
+
+  // Blocks for up to timeout_ms waiting for the next JPEG screen frame.
+  // Returns an empty byte array on timeout (not an error) so the
+  // Kotlin side can just loop without special-casing "nothing yet".
+  [Throws=FfiError]
+  bytes next_frame(u32 timeout_ms);
+
+  void close();
+};
